@@ -47,6 +47,13 @@ func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
 			return
 		}
+		
+		// Ensure that the token is an access token, not a refresh token
+        if payload.TokenType != "access" {
+            err := errors.New("only access tokens are allowed")
+            ctx.AbortWithStatusJSON(http.StatusNotFound, errorResponse(err))
+            return
+        }
 
 		ctx.Set(authorizationPayloadKey, payload)
 		ctx.Next()

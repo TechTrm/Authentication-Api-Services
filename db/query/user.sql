@@ -22,3 +22,9 @@ OFFSET $2;
 SELECT * FROM users
 WHERE username = $1 OR email = $2
 LIMIT 1;
+
+-- name: UpdateUserPassword :one
+UPDATE users
+SET hashed_password = $1, password_changed_at = $2
+WHERE id = $3
+RETURNING *;

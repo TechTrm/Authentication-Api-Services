@@ -26,8 +26,8 @@ func NewJWTMaker(secretKey string) (Maker, error) {
 }
 
 // CreateToken creates a new token for a specific username and duration
-func (maker *JWTMaker) CreateToken(username string, role string, duration time.Duration) (string, *Payload, error) {
-	payload, err := NewPayload(username, role, duration)
+func (maker *JWTMaker) CreateToken(username string, tokentype string, duration time.Duration) (string, *Payload, error) {
+	payload, err := NewPayload(username, tokentype, duration)
 	if err != nil {
 		return "", payload, err
 	}
@@ -67,14 +67,13 @@ func (maker *JWTMaker) VerifyToken(token string) (*Payload, error) {
 	if !ok {
 		return nil, ErrInvalidToken
 	}
-    fmt.Println(payload)
+    // fmt.Println(payload)
 	return payload, nil
 }
 
 // BlacklistToken adds the given token to the blacklist  TODO: Session and Refresh token Blocked Should Be implement 
 func (maker *JWTMaker) BlacklistToken(token string) {
 	maker.blacklisted.Store(token, struct{}{})
-
 }
 
 

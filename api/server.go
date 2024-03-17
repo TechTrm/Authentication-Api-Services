@@ -38,18 +38,22 @@ func NewServer(config util.Config, store *db.Store) (*Server, error)  {
 func (server *Server) setUpRouter() {
 	router := gin.Default()
 
+	//User Registration and Login EndPoints
 	router.POST("/v1/api/users/register", server.createUser)
 	router.POST("/v1/api/users/login", server.loginUser)
 	router.POST("/v1/api/tokens/refresh_token", server.renewAccessToken)
 
+	//Forgot Password EndPoints
+	router.POST("/v1/api/forgot_password", server.sendEmail)
+	router.GET("/v1/api/reset_password/verify_email", server.verifyEmail)
+	router.POST("/v1/api/reset_password", server.resetPassword)
+
+	//Protected EndPoints
 	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
 	authRoutes.GET("/v1/api/users", server.listUsers)
 	authRoutes.POST("/v1/api/users/logout", server.Logout)
 
-	// router.GET("/users/:id", server.getAccount)
-	// router.GET("/users", server.listAccount)
-	// router.PUT("/users", server.updateAccount)
-	// router.DELETE("/users/:id", server.deleteAccount)
+
 
 	server.router = router
 }

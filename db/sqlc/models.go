@@ -31,3 +31,12 @@ type User struct {
 	PasswordChangedAt time.Time `json:"password_changed_at"`
 	CreatedAt         time.Time `json:"created_at"`
 }
+
+type VerifyEmail struct {
+	ID         int64     `json:"id"`
+	UserID     int64     `json:"user_id"`
+	SecretCode string    `json:"secret_code"`
+	IsUsed     bool      `json:"is_used"`
+	CreatedAt  time.Time `json:"created_at"`
+	ExpiredAt  time.Time `json:"expired_at"`
+}
