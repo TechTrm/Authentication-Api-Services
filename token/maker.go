@@ -11,4 +11,7 @@ type Maker interface {
 	// VerifyToken checks if the token is valid or not
 	VerifyToken(token string) (*Payload, error)
 
+	// BlacklistToken Blocked the token
+	BlacklistToken(token string)
+
 }

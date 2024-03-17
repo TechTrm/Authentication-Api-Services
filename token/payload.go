@@ -20,8 +20,6 @@ type Payload struct {
 	Username  string    `json:"username"`
 	Role      string    `json:"role"`
 	jwt.RegisteredClaims
-	// IssuedAt  time.Time `json:"issued_at"`
-	// ExpiredAt time.Time `json:"expired_at"`
 }
 
 // NewPayload creates a new token payload with a specific username and duration

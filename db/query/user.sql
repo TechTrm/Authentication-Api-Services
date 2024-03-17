@@ -12,6 +12,12 @@ INSERT INTO users (
 SELECT * FROM users
 WHERE id = $1 LIMIT 1;
 
+-- name: GetListUsers :many
+SELECT id, username, full_name, user_role, email, password_changed_at, created_at FROM users
+ORDER BY id
+LIMIT $1
+OFFSET $2;
+
 -- name: GetUserByNameOrEmail :one
 SELECT * FROM users
 WHERE username = $1 OR email = $2

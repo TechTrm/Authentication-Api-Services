@@ -3,14 +3,15 @@ package api
 import (
 	"database/sql"
 	"net/http"
+	"strings"
 	"time"
 
 	db "github.com/TechTrm/Authentication-Api-Services/db/sqlc"
 	"github.com/TechTrm/Authentication-Api-Services/util"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
-
 
 
 type createUserRequest struct {
@@ -86,11 +87,11 @@ type loginUserRequest struct {
 }
 
 type loginUserResponse struct {
-	// SessionID             uuid.UUID    `json:"session_id"`
+	SessionID             uuid.UUID    `json:"session_id"`
 	AccessToken           string       `json:"access_token"`
-	// AccessTokenExpiresAt  time.Time    `json:"access_token_expires_at"`
-	// RefreshToken          string       `json:"refresh_token"`
-	// RefreshTokenExpiresAt time.Time    `json:"refresh_token_expires_at"`
+	AccessTokenExpiresAt  time.Time    `json:"access_token_expires_at"`
+	RefreshToken          string       `json:"refresh_token"`
+	RefreshTokenExpiresAt time.Time    `json:"refresh_token_expires_at"`
 	User                  userResponse `json:"user"`
 }
 
@@ -122,7 +123,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, _, err := server.tokenMaker.CreateToken(
+	accessToken, accessPayload, err := server.tokenMaker.CreateToken(
 		user.Username,
 		user.UserRole,
 		server.config.AccessTokenDuration,
@@ -132,37 +133,77 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	// refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(
-	// 	user.Username,
-	// 	user.UserRole,
-	// 	server.config.RefreshTokenDuration,
-	// )
-	// if err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-	// 	return
-	// }
-
-	// session, err := server.store.CreateSession(ctx, db.CreateSessionParams{
-	// 	ID:           refreshPayload.ID,
-	// 	Username:     user.Username,
-	// 	RefreshToken: refreshToken,
-	// 	UserAgent:    ctx.Request.UserAgent(),
-	// 	ClientIp:     ctx.ClientIP(),
-	// 	IsBlocked:    false,
-	// 	ExpiresAt:    refreshPayload.ExpiredAt,
-	// })
-	// if err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-	// 	return
-	// }
+	refreshToken, refreshPayload, err := server.tokenMaker.CreateToken(
+		user.Username,
+		user.UserRole,
+		server.config.RefreshTokenDuration,
+	)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+ 
+	session, err := server.store.CreateSession(ctx, db.CreateSessionParams{
+		ID:           refreshPayload.ID,
+		UserID:       user.ID,
+		RefreshToken: refreshToken,
+		UserAgent:    ctx.Request.UserAgent(),
+		ClientIp:     ctx.ClientIP(),
+		IsBlocked:    false,
+		ExpiresAt:    refreshPayload.ExpiresAt.Time,
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
 
 	rsp := loginUserResponse{
-		// SessionID:             "session.ID",
+		SessionID:             session.ID,
 		AccessToken:           accessToken,
-		// AccessTokenExpiresAt:  "accessPayload.ExpiresAt",
-		// RefreshToken:          refreshToken,
-		// RefreshTokenExpiresAt: refreshPayload.ExpiredAt,
+		AccessTokenExpiresAt:  accessPayload.ExpiresAt.Time,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: refreshPayload.ExpiresAt.Time,
 		User:                  newUserResponse(user),
 	}
 	ctx.JSON(http.StatusOK, rsp)
+}
+
+type ListUsersRequest struct {
+	PageID   int32 `form:"page_id" binding:"required,min=1"`
+	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
+}
+
+func (server *Server) listUsers(ctx *gin.Context) {
+	var req ListUsersRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	arg := db.GetListUsersParams{
+		Limit:  req.PageSize,
+		Offset: (req.PageID - 1) * req.PageSize,
+	}
+
+	users, err := server.store.GetListUsers(ctx, arg)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	
+	ctx.JSON(http.StatusOK, users)
+}
+
+
+func(server *Server) Logout(ctx *gin.Context) {
+	authorizationHeader := ctx.GetHeader("authorization")
+	fields := strings.Fields(authorizationHeader)
+	accessToken := fields[1]
+	server.tokenMaker.BlacklistToken(accessToken)
 }

@@ -40,7 +40,11 @@ func (server *Server) setUpRouter() {
 
 	router.POST("/v1/api/users/register", server.createUser)
 	router.POST("/v1/api/users/login", server.loginUser)
-	// router.POST("/users/logout", server.logOutUser)
+	router.POST("/v1/api/tokens/refresh_token", server.renewAccessToken)
+
+	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
+	authRoutes.GET("/v1/api/users", server.listUsers)
+	authRoutes.POST("/v1/api/users/logout", server.Logout)
 
 	// router.GET("/users/:id", server.getAccount)
 	// router.GET("/users", server.listAccount)
