@@ -12,13 +12,13 @@ import (
 // Server serves HTTP requests for our AuthApi service.
 type Server struct {
 	config  util.Config
-	store  *db.Store
+	store  db.Store
 	tokenMaker token.Maker
 	router *gin.Engine
 }
 
 // NewServer creates a new HTTP server and set up routing.
-func NewServer(config util.Config, store *db.Store) (*Server, error)  {
+func NewServer(config util.Config, store db.Store) (*Server, error)  {
 	tokenMaker, err := token.NewJWTMaker(config.TokenSymmetricKey)
 
 	if err != nil {
