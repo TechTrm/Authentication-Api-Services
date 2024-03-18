@@ -31,11 +31,17 @@ test:
 server:
 	go run main.go
 
+docker_build_image:
+	 docker build -t authsrvapi:latest .
+
 docker_server_dev:
 	 docker run --name authsrvapi -p 8080:8080 authsrvapi:latest
 
 docker_server_prod:
 	docker run --name authsrvapi -p 8080:8080 -e GIN_MODE=release authsrvapi:latest
+
+docker_server_with_path:
+	docker run --name authsrvapi --network authsrvapi-network -p 8080:8080 -e DB_SOURCE="postgresql://root:password@postgres15:5432/users_db?sslmode=disable" authsrvapi:latest
 
 docker_bg_start:
 	docker start authsrvapi
@@ -44,6 +50,6 @@ docker_bg_stop:
 	docker stop authsrvapi
 
 mock:
-	mockgen -package mockdb -destination db/mock/store.go github.com/techschool/simplebank/db/sqlc Store
+	mockgen -package mockdb -destination db/mock/store.go github.com/TechTrm/Authentication-Api-Services/db/sqlc Store
 
 .PHONY: docker_network connect_network postgres createdb dropdb migrateup migratedown new_migration sqlc test server docker_server_dev docker_server_prod docker_bg_start docker_bg_stop mock  
