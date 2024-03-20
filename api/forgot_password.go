@@ -142,7 +142,7 @@ func(server *Server) verifyEmail(ctx *gin.Context){
 
 
 type resetPasswordRequest struct {
-	VerifyID    int64    `json:"verify_id" binding:"required"`
+	VerifyID    int64    `json:"verify_id" binding:"required,min=1"`
 	Password string `json:"password" binding:"required,min=8"`
 	ConfirmPassword string `json:"confirm_password" binding:"required,min=8"`
 }

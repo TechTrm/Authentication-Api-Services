@@ -13,7 +13,6 @@ import (
 	"github.com/lib/pq"
 )
 
-
 type createUserRequest struct {
 	Username string `json:"username" binding:"required,alphanum"`
 	Password string `json:"password" binding:"required,min=8"`
@@ -22,11 +21,11 @@ type createUserRequest struct {
 }
 
 type userResponse struct {
-	Id                int64    `json:"id"`
+	Id                int64     `json:"id"`
 	Username          string    `json:"username"`
 	FullName          string    `json:"full_name"`
 	Email             string    `json:"email"`
-	UserRole  	       string   `json:"UserRole"`
+	UserRole          string    `json:"UserRole"`
 	PasswordChangedAt time.Time `json:"password_changed_at"`
 	CreatedAt         time.Time `json:"created_at"`
 }
@@ -38,12 +37,12 @@ func newUserResponse(user db.User) userResponse {
 		FullName:          user.FullName,
 		Email:             user.Email,
 		PasswordChangedAt: user.PasswordChangedAt,
-		UserRole:  	       user.UserRole,
+		UserRole:          user.UserRole,
 		CreatedAt:         user.CreatedAt,
 	}
 }
 
-
+// Create User EndPoint
 func (server *Server) createUser(ctx *gin.Context) {
 	var req createUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -68,7 +67,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Code.Name() {
-			 case "unique_violation":
+			case "unique_violation":
 				ctx.JSON(http.StatusForbidden, errorResponse(err))
 				return
 			}
@@ -95,6 +94,7 @@ type loginUserResponse struct {
 	User                  userResponse `json:"user"`
 }
 
+// Login User EndPoint
 func (server *Server) loginUser(ctx *gin.Context) {
 	var req loginUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -103,8 +103,8 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	}
 
 	requestedUserNameOrEmail := db.GetUserByNameOrEmailParams{
-	       Username: req.Username,
-		   Email:   req.Username,
+		Username: req.Username,
+		Email:    req.Username,
 	}
 
 	user, err := server.store.GetUserByNameOrEmail(ctx, requestedUserNameOrEmail)
@@ -125,7 +125,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 
 	accessToken, accessPayload, err := server.tokenMaker.CreateToken(
 		user.Username,
-	 	"access",
+		"access",
 		server.config.AccessTokenDuration,
 	)
 	if err != nil {
@@ -142,7 +142,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
- 
+
 	session, err := server.store.CreateSession(ctx, db.CreateSessionParams{
 		ID:           refreshPayload.ID,
 		UserID:       user.ID,
@@ -173,6 +173,7 @@ type ListUsersRequest struct {
 	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
 }
 
+// List Users EndPoint
 func (server *Server) listUsers(ctx *gin.Context) {
 	var req ListUsersRequest
 	if err := ctx.ShouldBindQuery(&req); err != nil {
@@ -196,12 +197,11 @@ func (server *Server) listUsers(ctx *gin.Context) {
 		return
 	}
 
-	
 	ctx.JSON(http.StatusOK, users)
 }
 
-
-func(server *Server) Logout(ctx *gin.Context) {
+// Logout User EndPoint
+func (server *Server) Logout(ctx *gin.Context) {
 	authorizationHeader := ctx.GetHeader("authorization")
 	fields := strings.Fields(authorizationHeader)
 	accessToken := fields[1]
@@ -210,7 +210,7 @@ func(server *Server) Logout(ctx *gin.Context) {
 	msg := map[string]string{
 		"message": "User logged out successfully",
 	}
-	
+
 	ctx.JSON(http.StatusOK, msg)
 
 }
