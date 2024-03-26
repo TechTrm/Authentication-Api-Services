@@ -7,7 +7,10 @@ import (
 	"github.com/TechTrm/Authentication-Api-Services/api"
 	db "github.com/TechTrm/Authentication-Api-Services/db/sqlc"
 	"github.com/TechTrm/Authentication-Api-Services/util"
+	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/lib/pq"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 )
 
 // func init(){
@@ -47,7 +50,7 @@ func main() {
 		log.Fatal("cannot Connect to DB:", err)
 	}
 
-
+  runDBMigration(config.MigrationURL, config.DBSource)
 
 	store := db.NewStore(conn)
 	server, err := api.NewServer(config, store)
@@ -64,3 +67,16 @@ func main() {
 
 }
 
+func runDBMigration(migrationURL string, dbSource string){
+	migration, err := migrate.New(migrationURL, dbSource)
+
+	if err != nil {
+		log.Fatal("cannot create new migrate instance:", err)
+	}
+
+	if err = migration.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Fatal("failed to run migrate up:", err)
+	}
+
+	log.Println("db migrated successfully")
+}
