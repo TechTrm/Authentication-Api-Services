@@ -5,13 +5,13 @@ connect_network:
 	docker network connect $(network_name) $(container_name)
 
 postgres:
-	docker run --name postgres15 -network authsrvapi-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=password -d postgres:15-alpine
+	docker run --name postgres-db --network authsrvapi-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=password -d postgres:15-alpine
 
 createdb:
-	docker exec -it postgres15 createdb --username=root --owner=root users_db
+	docker exec -it postgres-db createdb --username=root --owner=root users_db
 
 dropdb:
-	docker exec -it postgres15 dropdb users_db
+	docker exec -it postgres-db dropdb users_db
 
 migrateup:
 	migrate -path db/migration -database "postgresql://root:password@localhost:5432/users_db?sslmode=disable" -verbose up
@@ -35,19 +35,19 @@ docker_build_image:
 	 docker build -t authsrvapi:latest .
 
 docker_server_dev:
-	 docker run --name authsrvapi -p 8080:8080 authsrvapi:latest
+	 docker run --name go-auth-service-api -p 8080:8080 authsvc-api:latest
 
 docker_server_prod:
-	docker run --name authsrvapi -p 8080:8080 -e GIN_MODE=release authsrvapi:latest
+	docker run --name authsrvapi -p 8080:8080 -e GIN_MODE=release authsvc-api:latest
 
 docker_server_with_path:
-	docker run --name authsrvapi --network authsrvapi-network -p 8080:8080 -e DB_SOURCE="postgresql://root:password@postgres15:5432/users_db?sslmode=disable" authsrvapi:latest
+	docker run --name authsrvapi --network authsrvapi-network -p 8080:8080 -e DB_SOURCE="postgresql://root:password@postgres15:5432/users_db?sslmode=disable" authsvc-api:latest
 
 docker_bg_start:
-	docker start authsrvapi
+	docker start authsvc-api
 
 docker_bg_stop:
-	docker stop authsrvapi
+	docker stop authsvc-api
 
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/TechTrm/Authentication-Api-Services/db/sqlc Store

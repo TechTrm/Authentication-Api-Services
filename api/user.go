@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"fmt"	
 
 	db "github.com/TechTrm/Authentication-Api-Services/db/sqlc"
 	"github.com/TechTrm/Authentication-Api-Services/util"
@@ -44,7 +45,10 @@ func newUserResponse(user db.User) userResponse {
 
 // Create User EndPoint
 func (server *Server) createUser(ctx *gin.Context) {
+	fmt.Println(ctx.Request.Body)
 	var req createUserRequest
+
+	// print the request body
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
